@@ -11,13 +11,13 @@ def main():
     t1 = threading.Thread(target=reader_wr, daemon=True)
 
     # Smartmeter (FC=04 / FC=06)
-    t2 = threading.Thread(target=reader_smartmeter, daemon=True)
+    #t2 = threading.Thread(target=reader_smartmeter, daemon=True)
  
     # Modbus Sniffer (nur zum Debuggen)
     #t3 = threading.Thread(target=serial_sniffer, daemon=True)
 
     t1.start()
-    t2.start()
+    #t2.start()
     #t3.start()
 
     # Hauptthread läuft weiter
