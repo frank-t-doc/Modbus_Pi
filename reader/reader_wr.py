@@ -3,7 +3,7 @@ import serial
 import time
 from parser.frame_router import route_frame
 
-def reader_wr(port="/dev/ttyUSB0", baud=9600):
+def reader_wr(port="/dev/ttyUSB1", baud=9600):
     ser = serial.Serial(port, baudrate=baud, timeout=0.2)
 
     print(f"WR-Reader gestartet auf {port}")
