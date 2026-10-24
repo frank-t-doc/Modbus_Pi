@@ -52,8 +52,8 @@ def parse_wr_modbus_frame(frame_hex: str) -> dict:
     decoded["temperature_internal_c"] = regs[6] / 10.0
     decoded["temperature_ipm_c"] = regs[7] / 10.0
 
-    #decoded["status_bits"] = regs[8]
-    #decoded["status_byte"] = regs[9]
-    #decoded["mode_code"] = regs[10]
+    decoded["status_bits"] = regs[8]
+    decoded["status_byte"] = regs[9]
+    decoded["mode_code"] = regs[10]
 
     return decoded
