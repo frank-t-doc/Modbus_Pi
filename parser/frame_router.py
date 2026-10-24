@@ -16,11 +16,6 @@ from .influx_writer import (
 def route_frame(frame_hex):
     frame_hex = frame_hex.strip().replace(" ", "").lower()
 
-    print(f"Routing Frame: {frame_hex}")
-    print(f"slave_id: {frame_hex[:2]}")
-    print(f"function: {frame_hex[2:4]}")
-    return 0
-
     # 1️⃣ CAN-Frame?
     if ":" in frame_hex:
         decoded = parse_bms_can_frame(frame_hex)
