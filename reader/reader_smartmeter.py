@@ -2,7 +2,7 @@
 import serial
 from parser.frame_router import route_frame
 
-def reader_smartmeter(port="/dev/ttyUSB1", baud=9600):
+def reader_smartmeter(port="/dev/ttyUSB0", baud=9600):
     ser = serial.Serial(port, baudrate=baud, timeout=0.01)
 
     print(f"Smartmeter-Reader gestartet auf {port}")
