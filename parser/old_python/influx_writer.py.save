@@ -1,0 +1,32 @@
+# modbus/parser/influx_writer.py
+
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.write_api import SYNCHRONOUS
+
+# Deine InfluxDB Einstellungen
+INFLUX_URL = "http://192.168.10.223:8086"
+INFLUX_TOKEN = "yZebaGFUz2Q9PvSLjXh1Fsy66vQx5j9D4QiQRIwl4-7mQZSRDgiJRk7bdN0_YtQMacJTK2JXLy5ns-IUI6q3rA=="
+INFLUX_ORG = "TuttliesHomeBase"
+INFLUX_BUCKET = "growatt"
+
+client = InfluxDBClient(
+    url=INFLUX_URL,
+    token=INFLUX_TOKEN,
+    org=INFLUX_ORG
+)
+
+write_api = client.write_api(write_options=SYNCHRONOUS)
+
+def write_to_influx(decoded):
+    """
+    Schreibt ein beliebiges Decoder-Dictionary in InfluxDB.
+    """
+    point = Point("growatt_data")
+
+    for key, value in decoded.items():
+        if isinstance(value, (int, float)):
+            point = point.field(key, value)
+        else:
+            point = point.tag(key, str(value))
+
+    write_api.write(bucket=INFLUX_BUCKET, record=point)

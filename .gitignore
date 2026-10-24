@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.log
+
+#venv/
+#.venv/
+
+.vscode/
+.idea/
+
+config/secrets.yaml
+.env
