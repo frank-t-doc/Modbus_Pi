@@ -35,6 +35,10 @@ def parse_wr_modbus_frame(frame_hex: str) -> dict:
         "register_count": reg_count,
     }
 
+    decoded["payload"] = payload_hex
+
+    return decoded
+
     for idx, val in enumerate(regs):
         decoded[f"raw_reg_{idx:02d}"] = val
 
