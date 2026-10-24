@@ -20,6 +20,10 @@ def route_frame(frame_hex):
     if ":" in frame_hex:
         decoded = parse_bms_can_frame(frame_hex)
 
+    elif frame_hex[:2] == "04":
+        decoded = parse_smartmeter_frame(frame_hex)
+        write_smartmeter_decoded(decoded)
+
     # 2️⃣ ShineBus-Frame?
     elif is_shinebus_frame(frame_hex):
         decoded = parse_shinebus_frame(frame_hex)
