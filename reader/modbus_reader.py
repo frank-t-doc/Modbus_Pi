@@ -1,6 +1,6 @@
 import serial
 
-def read_modbus_frame(port="/dev/ttyUSB0", baud=9600):
+def read_modbus_frame(port="/dev/ttyUSB1", baud=9600):
     """
     Liest rohe Modbus-RTU Frames vom RS485-Bus.
     Gibt einen Hex-String zurück oder None bei Timeout.
