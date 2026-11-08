@@ -7,6 +7,39 @@ from datetime import datetime
 def decode_float(b):
     return struct.unpack(">f", b)[0]
 
+def extract_request_register(frame):
+    """
+    Sucht den Register-Request des DTSU666.
+
+    Beispiel:
+    04 03 20 12 00 08
+
+    -> 0x2012
+    """
+
+    for i in range(len(frame) - 8):
+
+        if (
+            frame[i] == 0x04 and
+            frame[i + 1] == 0x03
+        ):
+
+            register = (
+                (frame[i + 2] << 8)
+                | frame[i + 3]
+            )
+
+            # echter Request hat immer:
+            # Register + Anzahl Register
+            count = (
+                (frame[i + 4] << 8)
+                | frame[i + 5]
+            )
+
+            if count > 0:
+                return register
+
+    return None
 
 def extract_modbus_response(frame):
     """
@@ -49,6 +82,31 @@ def parse_dtsu666_power(frame, decoded):
 
     response = extract_modbus_response(frame)
 
+    request_register = extract_request_register(frame)
+
+    if request_register is not None:
+
+        decoded["request_register"] = (
+        f"0x{request_register:04X}"
+        ) 
+
+        register_names = {
+            0x2000: "line_voltage",
+            0x2006: "phase_voltage",
+            0x200C: "current",
+            0x2012: "active_power",
+            0x201A: "reactive_power",
+            0x202A: "power_factor",
+            0x2044: "frequency",
+            0x101E: "import_energy",
+            0x1028: "export_energy"
+        }
+
+    if request_register in register_names:
+        decoded["request_name"] = register_names[
+            request_register
+        ]
+        
     if response is None:
 
         decoded["type"] = "dtsu666_no_response_found"
