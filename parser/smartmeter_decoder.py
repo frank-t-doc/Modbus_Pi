@@ -8,22 +8,62 @@ def decode_float(b):
     return struct.unpack(">f", b)[0]
 
 
+def extract_modbus_response(frame):
+    """
+    Findet die echte DTSU666 Antwort:
+
+    04 03 10 xx xx xx xx ...
+
+    Auch wenn Request + Response oder mehrere
+    Frames in einem String enthalten sind.
+    """
+
+    for i in range(len(frame) - 3):
+
+        if (
+            frame[i] == 0x04 and
+            frame[i + 1] == 0x03 and
+            frame[i + 2] == 0x10
+        ):
+
+            # 1 Slave
+            # 1 Function
+            # 1 Bytecount
+            # 16 Datenbytes
+            # 2 CRC
+            if len(frame) >= i + 21:
+                return frame[i:i + 21]
+
+    return None
+
+
 def parse_dtsu666_power(frame, decoded):
     """
     DTSU666:
-    2012H Pt Gesamte Wirkleistung
-    2014H Pa Phase A
-    2016H Pb Phase B
-    2018H Pc Phase C
+
+    2012H Pt = Gesamtwirkleistung
+    2014H Pa = Phase A
+    2016H Pb = Phase B
+    2018H Pc = Phase C
     """
 
-    bytecount = frame[2]
+    response = extract_modbus_response(frame)
 
-    if bytecount != 16:
-        decoded["type"] = "dtsu666_unknown_fc03"
+    if response is None:
+
+        decoded["type"] = "dtsu666_no_response_found"
+
         return decoded
 
-    data = frame[3:19]
+    bytecount = response[2]
+
+    if bytecount != 16:
+
+        decoded["type"] = "dtsu666_invalid_length"
+
+        return decoded
+
+    data = response[3:19]
 
     pt = decode_float(data[0:4]) * 0.1
     pa = decode_float(data[4:8]) * 0.1
@@ -32,11 +72,18 @@ def parse_dtsu666_power(frame, decoded):
 
     decoded.update({
         "type": "dtsu666_power",
+
         "power_total_w": round(pt, 1),
         "power_l1_w": round(pa, 1),
         "power_l2_w": round(pb, 1),
         "power_l3_w": round(pc, 1),
-        "phase_sum_w": round(pa + pb + pc, 1)
+
+        "phase_sum_w": round(
+            pa + pb + pc,
+            1
+        ),
+
+        "crc": response[-2:].hex()
     })
 
     return decoded
