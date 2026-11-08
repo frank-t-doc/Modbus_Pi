@@ -3,6 +3,7 @@
 import struct
 from datetime import datetime
 
+LAST_REGISTER = None
 
 def decode_float(b):
     return struct.unpack(">f", b)[0]
@@ -84,15 +85,21 @@ def parse_dtsu666_power(frame, decoded):
 
     request_register = extract_request_register(frame)
 
+    global LAST_REGISTER
+
     if request_register is not None:
 
-        print(
-            f"DTSU666 Request erkannt: 0x{request_register:04X}"
-        )
+        if request_register != LAST_REGISTER:
+
+            print(
+                f"DTSU666 Neuer Request: 0x{request_register:04X}"
+            )
+
+            LAST_REGISTER = request_register
 
         decoded["request_register"] = (
             f"0x{request_register:04X}"
-        ) 
+        )
 
         register_names = {
             0x2000: "line_voltage",
@@ -107,14 +114,14 @@ def parse_dtsu666_power(frame, decoded):
         }
 
         if request_register in register_names:
-            decoded["request_name"] = register_names[
-                request_register
-            ]
 
+            decoded["request_name"] = (
+                register_names[request_register]
+            )
+            
     if response is None:
 
         decoded["type"] = "dtsu666_no_response_found"
-
         return decoded
 
     bytecount = response[2]
