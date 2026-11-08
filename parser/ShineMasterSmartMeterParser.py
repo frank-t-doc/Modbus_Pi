@@ -1,6 +1,3 @@
-
-
-
 import serial
 import struct
 
@@ -11,12 +8,17 @@ FRAME_START = bytes([
 
 FRAME_LEN = 29
 
+
 def decode_float(data):
     return struct.unpack(">f", data)[0]
+
 
 def parse_frame(frame):
 
     response = frame[8:]
+
+    if len(response) < 21:
+        return None
 
     slave = response[0]
     function = response[1]
@@ -33,10 +35,13 @@ def parse_frame(frame):
     pc = decode_float(data[12:16]) * 0.1
 
     return {
-        "pt_w": round(pt, 1),
-        "pa_w": round(pa, 1),
-        "pb_w": round(pb, 1),
-        "pc_w": round(pc, 1),
+        "slave": slave,
+        "function": function,
+
+        "power_total_w": round(pt, 1),
+        "power_l1_w": round(pa, 1),
+        "power_l2_w": round(pb, 1),
+        "power_l3_w": round(pc, 1),
 
         "phase_sum_w": round(
             pa + pb + pc,
@@ -45,6 +50,28 @@ def parse_frame(frame):
 
         "crc": response[-2:].hex()
     }
+
+
+def test_decoder():
+
+    frame_hex = (
+        "040320120008ef9c"
+        "04031045d9f80044550000456f4000450f70008f6f"
+    )
+
+    frame = bytes.fromhex(frame_hex)
+
+    result = parse_frame(frame)
+
+    print("\n=== DTSU666 TEST ===")
+    print(result)
+
+    assert abs(result["power_total_w"] - 697.5) < 0.5
+    assert abs(result["power_l1_w"] - 85.2) < 0.5
+    assert abs(result["power_l2_w"] - 382.8) < 0.5
+    assert abs(result["power_l3_w"] - 229.9) < 0.5
+
+    print("TEST OK")
 
 
 def run_sniffer():
@@ -78,13 +105,19 @@ def run_sniffer():
             if len(buffer) < idx + FRAME_LEN:
                 break
 
-            frame = buffer[idx: idx + FRAME_LEN]
+            frame = buffer[idx:idx + FRAME_LEN]
 
-            del buffer[: idx + FRAME_LEN]
+            del buffer[:idx + FRAME_LEN]
 
             parsed = parse_frame(frame)
 
             if parsed:
+
                 print(parsed)
 
                 # write_smartmeter(parsed)
+
+
+if __name__ == "__main__":
+    test_decoder()
+    # run_sniffer()
