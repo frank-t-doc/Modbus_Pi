@@ -86,8 +86,12 @@ def parse_dtsu666_power(frame, decoded):
 
     if request_register is not None:
 
+        print(
+            f"DTSU666 Request erkannt: 0x{request_register:04X}"
+        )
+
         decoded["request_register"] = (
-        f"0x{request_register:04X}"
+            f"0x{request_register:04X}"
         ) 
 
         register_names = {
@@ -102,11 +106,11 @@ def parse_dtsu666_power(frame, decoded):
             0x1028: "export_energy"
         }
 
-    if request_register in register_names:
-        decoded["request_name"] = register_names[
-            request_register
-        ]
-        
+        if request_register in register_names:
+            decoded["request_name"] = register_names[
+                request_register
+            ]
+
     if response is None:
 
         decoded["type"] = "dtsu666_no_response_found"
