@@ -103,10 +103,29 @@ def write_smartmeter_decoded(decoded):
 
         try:
             point = point.field(key, float(value))
-        except:
-            pass
+        except Exception as e:
+            print(f"Field Error {key}: {e}")
+ #           pass
+    try:
 
-    write_api.write(bucket=INFLUX_BUCKET, record=point)
+        write_api.write(
+            bucket=INFLUX_BUCKET,
+            record=point
+        )
+
+        print(
+            "Influx OK:",
+            decoded.get("power_total_w")
+        )
+
+    except Exception as e:
+
+        print(
+            "Influx ERROR:",
+            e
+        )
+
+ #   write_api.write(bucket=INFLUX_BUCKET, record=point)
 
 # ---------------------------------------------------------
 # WR-Modbus Frames (WR1 / WR2 getrennt)
