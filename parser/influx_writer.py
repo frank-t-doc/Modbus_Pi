@@ -11,7 +11,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 # ---------------------------------------------------------
 
 INFLUX_URL = "http://192.168.10.223:8086"
-INFLUX_TOKEN = ""
+INFLUX_TOKEN = "yZebaGFUz2Q9PvSLjXh1Fsy66vQx5j9D4QiQRIwl4-7mQZSRDgiJRk7bdN0_YtQMacJTK2JXLy5ns-IUI6q3rA=="
 INFLUX_ORG = "TuttliesHomeBase"
 INFLUX_BUCKET = "growatt"
 
