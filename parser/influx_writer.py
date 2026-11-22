@@ -127,28 +127,42 @@ def write_smartmeter_decoded(decoded):
             decoded.get("request_register", "unknown")
         )
         .tag(
+            "function",
+            decoded.get("function", "")
+        )
+        .tag(
+            "slave",
+            decoded.get("slave", "")
+        )
+        .tag(
             "crc",
             decoded.get("crc", "")
         )
         .time(datetime.utcnow())
     )
 
+    # Metadaten überspringen Felder niemals als Datenfelder schreiben
+    excluded_keys = [
+        "device_id",
+        "type",
+        "request_name",
+        "request_register",
+        "function",
+        "slave",
+        "crc",
+        "raw",
+        "registers",
+        "timestamp"
+    ]
+
     for key, value in decoded.items():
 
-        # Metadaten überspringen
-        if key in [
-            "device_id",
-            "type",
-            "request_name",
-            "request_register",
-            "crc",
-            "raw",
-            "registers",
-            "timestamp"
-        ]:
+        if key in excluded_keys:
             continue
 
-        # Nur numerische Werte schreiben
+        if isinstance(value, bool):
+            continue
+
         if isinstance(value, (int, float)):
             point = point.field(key, value)
 
