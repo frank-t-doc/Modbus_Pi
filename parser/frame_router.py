@@ -5,7 +5,7 @@ from .bms_can_decoder import parse_bms_can_frame
 from .bms_rs485_decoder import parse_bms_rs485_frame
 from .shinebus_decoder import is_shinebus_frame, parse_shinebus_frame
 from .wr_modbus_decoder import is_wr_modbus_frame, parse_wr_modbus_frame
-from .influx_writer_old import (
+from .influx_writer import (
     write_shinebus_raw,
     write_shinebus_decoded,
     write_smartmeter_decoded,
