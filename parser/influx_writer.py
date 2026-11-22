@@ -1,14 +1,20 @@
 # modbus/parser/influx_writer.py
 
 from datetime import datetime
+
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-# Deine InfluxDB Einstellungen
+
+# ---------------------------------------------------------
+# InfluxDB Einstellungen
+# ---------------------------------------------------------
+
 INFLUX_URL = "http://192.168.10.223:8086"
-INFLUX_TOKEN = "yZebaGFUz2Q9PvSLjXh1Fsy66vQx5j9D4QiQRIwl4-7mQZSRDgiJRk7bdN0_YtQMacJTK2JXLy5ns-IUI6q3rA=="
+INFLUX_TOKEN = ""
 INFLUX_ORG = "TuttliesHomeBase"
 INFLUX_BUCKET = "growatt"
+
 
 client = InfluxDBClient(
     url=INFLUX_URL,
@@ -22,7 +28,9 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 # ---------------------------------------------------------
 # RAW ShineBus Frames (alle raw_reg_xx)
 # ---------------------------------------------------------
+
 def write_shinebus_raw(decoded):
+
     point = (
         Point("shinebus_raw")
         .tag("device_id", decoded.get("device_id", "unknown"))
@@ -31,18 +39,22 @@ def write_shinebus_raw(decoded):
         .time(datetime.utcnow())
     )
 
-    # Fields: alle raw_reg_xx
     for key, value in decoded.items():
         if key.startswith("raw_reg_"):
             point = point.field(key, float(value))
 
-    write_api.write(bucket=INFLUX_BUCKET, record=point)
+    write_api.write(
+        bucket=INFLUX_BUCKET,
+        record=point
+    )
 
 
 # ---------------------------------------------------------
-# DECODED ShineBus Frames (skaliert + berechnet)
+# DECODED ShineBus Frames
 # ---------------------------------------------------------
+
 def write_shinebus_decoded(decoded):
+
     point = (
         Point("shinebus_decoded")
         .tag("device_id", decoded.get("device_id", "unknown"))
@@ -50,7 +62,6 @@ def write_shinebus_decoded(decoded):
         .time(datetime.utcnow())
     )
 
-    # Felder, die Grafana benötigt
     for key in [
         "pv_temperature_c",
         "pv_temperature2_c",
@@ -70,20 +81,27 @@ def write_shinebus_decoded(decoded):
         "status_byte",
         "mode_code",
 
-        # optional: raw power values
         "pv_power_raw",
         "grid_power_raw",
         "battery_power_raw"
     ]:
+
         if key in decoded:
-            point = point.field(key, float(decoded[key]))
+            point = point.field(
+                key,
+                float(decoded[key])
+            )
 
-    write_api.write(bucket=INFLUX_BUCKET, record=point)
+    write_api.write(
+        bucket=INFLUX_BUCKET,
+        record=point
+    )
 
 
 # ---------------------------------------------------------
-# SMARTMETER Frames (Import/Export + Spannungen + Ströme)
+# SMARTMETER Frames (DTSU666)
 # ---------------------------------------------------------
+
 def write_smartmeter_decoded(decoded):
     """
     Schreibt Smartmeter-Daten in InfluxDB.
@@ -92,20 +110,48 @@ def write_smartmeter_decoded(decoded):
 
     point = (
         Point("smartmeter_decoded")
-        .tag("device_id", decoded.get("device_id", "growatt_smartmeter"))
-        .time(decoded.get("timestamp", datetime.utcnow().isoformat()))
+        .tag(
+            "device_id",
+            decoded.get("device_id", "growatt_smartmeter")
+        )
+        .tag(
+            "type",
+            decoded.get("type", "unknown")
+        )
+        .tag(
+            "request_name",
+            decoded.get("request_name", "unknown")
+        )
+        .tag(
+            "request_register",
+            decoded.get("request_register", "unknown")
+        )
+        .tag(
+            "crc",
+            decoded.get("crc", "")
+        )
+        .time(datetime.utcnow())
     )
 
-    # Alle Felder außer raw/registers/timestamp
     for key, value in decoded.items():
-        if key in ["raw", "registers", "timestamp"]:
+
+        # Metadaten überspringen
+        if key in [
+            "device_id",
+            "type",
+            "request_name",
+            "request_register",
+            "crc",
+            "raw",
+            "registers",
+            "timestamp"
+        ]:
             continue
 
-        try:
-            point = point.field(key, float(value))
-        except Exception as e:
-            print(f"Field Error {key}: {e}")
- #           pass
+        # Nur numerische Werte schreiben
+        if isinstance(value, (int, float)):
+            point = point.field(key, value)
+
     try:
 
         write_api.write(
@@ -115,7 +161,7 @@ def write_smartmeter_decoded(decoded):
 
         print(
             "Influx OK:",
-            decoded.get("power_total_w")
+            decoded.get("power_total_w", "n/a")
         )
 
     except Exception as e:
@@ -125,19 +171,19 @@ def write_smartmeter_decoded(decoded):
             e
         )
 
- #   write_api.write(bucket=INFLUX_BUCKET, record=point)
 
 # ---------------------------------------------------------
 # WR-Modbus Frames (WR1 / WR2 getrennt)
 # ---------------------------------------------------------
+
 def write_wr_modbus_decoded(decoded):
     """
-    Schreibt WR‑Modbus‑Daten getrennt nach WR‑ID.
+    Schreibt WR-Modbus-Daten getrennt nach WR-ID.
     Measurement: wr_decoded
-    Tags: wr_id
     """
 
-    wr_id = decoded.get("wr_id", None)
+    wr_id = decoded.get("wr_id")
+
     if wr_id is None:
         return
 
@@ -147,7 +193,6 @@ def write_wr_modbus_decoded(decoded):
         .time(datetime.utcnow())
     )
 
-    # Felder, die Grafana benötigt
     for key in [
         "pv_power_w",
         "grid_power_w",
@@ -166,10 +211,17 @@ def write_wr_modbus_decoded(decoded):
         "status_byte",
         "mode_code"
     ]:
+
         if key in decoded:
             try:
-                point = point.field(key, float(decoded[key]))
-            except:
+                point = point.field(
+                    key,
+                    float(decoded[key])
+                )
+            except Exception:
                 pass
 
-    write_api.write(bucket=INFLUX_BUCKET, record=point)
+    write_api.write(
+        bucket=INFLUX_BUCKET,
+        record=point
+    )
